@@ -1,22 +1,60 @@
 "use client"
 
-import type React from "react"
+import { useState, useRef } from "react"
+import abi from "@/contract_data/RefugeeFinance.json"
 
-import { useState } from "react"
+// Extend the Window interface to include the ethereum property
+declare global {
+  interface Window {
+    ethereum?: any
+  }
+}
+
 import Link from "next/link"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Wallet, Moon, Sun, ArrowLeft, Upload, LockKeyhole, X } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Wallet,
+  Moon,
+  Sun,
+  ArrowLeft,
+  Upload,
+  LockKeyhole,
+  X,
+} from "lucide-react"
 import Navbar from "@/components/navbar"
+import { ethers } from "ethers"
+
+// Import your contract data
+const address = "0xCF5a074Ab6ff2D9Cc381bb06d0E4956662683587";
+const contractABI = abi.abi;
 
 export default function GetStarted() {
+  // Theme state
   const { theme, setTheme } = useTheme()
+
+  // UI states for Admin/Login flow
   const [showAdminLogin, setShowAdminLogin] = useState(false)
   const [showVerification, setShowVerification] = useState(false)
+
+  // Form state for registration
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,18 +63,89 @@ export default function GetStarted() {
     document: "",
   })
 
+  // Wallet state
+  const [wallet, setWallet] = useState<{
+    account: string | null
+    provider: ethers.BrowserProvider | null
+    signer: ethers.JsonRpcSigner | null
+  }>({
+    account: null,
+    provider: null,
+    signer: null,
+  })
+
+  // File state for document upload
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Connect wallet function using ethers.js
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      alert("MetaMask is not installed!")
+      return
+    }
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      // Request account access if needed
+      await provider.send("eth_requestAccounts", [])
+      const signer = await provider.getSigner()
+      const account = await signer.getAddress()
+      setWallet({ account, provider, signer })
+      alert(`Wallet connected: ${account}`)
+    } catch (error) {
+      console.error("Error connecting wallet:", error)
+      alert("Failed to connect wallet")
+    }
+  }
+
+  // Function to call verifyDocuments on the contract when admin approves a document
+  // It uses the wallet's connected account as the user address.
+  const verifyDocument = async () => {
+    if (!wallet.signer || !wallet.account) {
+      alert("Wallet not connected!")
+      return
+    }
+    try {
+      // Create the contract instance using the connected signer
+      const contract = new ethers.Contract(
+        address,
+        contractABI,
+        wallet.signer
+      )
+      // Use the connected wallet's address as the user address
+      const userAddress = wallet.account
+      const tx = await contract.verifyDocuments(userAddress)
+      await tx.wait()
+      alert(`Document verified successfully for ${userAddress}!`)
+      setShowVerification(false)
+    } catch (error) {
+      console.error("Verification failed:", error)
+      alert("Verification failed!")
+    }
+  }
+
+  // Handle admin login submit
   const handleAdminSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setShowVerification(true)
   }
 
+  // Handle change for input fields
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  // Handle document select change
   const handleSelectChange = (value: string) => {
     setFormData((prev) => ({ ...prev, document: value }))
+  }
+
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0])
+    }
   }
 
   return (
@@ -58,9 +167,16 @@ export default function GetStarted() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>Document Verification</CardTitle>
-                  <CardDescription>Review and verify user documents</CardDescription>
+                  <CardDescription>
+                    Review and verify user documents
+                  </CardDescription>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowVerification(false)} className="rounded-full">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowVerification(false)}
+                  className="rounded-full"
+                >
                   <X className="h-4 w-4" />
                   <span className="sr-only">Close</span>
                 </Button>
@@ -109,7 +225,10 @@ export default function GetStarted() {
                 >
                   Reject
                 </Button>
-                <Button onClick={() => setShowVerification(false)} className="hover:bg-green-600 transition-colors">
+                <Button
+                  onClick={verifyDocument}
+                  className="hover:bg-green-600 transition-colors"
+                >
                   Approve
                 </Button>
               </CardFooter>
@@ -118,7 +237,9 @@ export default function GetStarted() {
             <Card className="max-w-md mx-auto">
               <CardHeader>
                 <CardTitle>Admin Login</CardTitle>
-                <CardDescription>Enter your credentials to access the admin panel</CardDescription>
+                <CardDescription>
+                  Enter your credentials to access the admin panel
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAdminSubmit} className="space-y-4">
@@ -128,7 +249,11 @@ export default function GetStarted() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="admin-password">Password</Label>
-                    <Input id="admin-password" type="password" placeholder="Enter your password" />
+                    <Input
+                      id="admin-password"
+                      type="password"
+                      placeholder="Enter your password"
+                    />
                   </div>
                   <Button type="submit" className="w-full">
                     Login
@@ -136,7 +261,11 @@ export default function GetStarted() {
                 </form>
               </CardContent>
               <CardFooter>
-                <Button variant="link" className="w-full" onClick={() => setShowAdminLogin(false)}>
+                <Button
+                  variant="link"
+                  className="w-full"
+                  onClick={() => setShowAdminLogin(false)}
+                >
                   Back to Registration
                 </Button>
               </CardFooter>
@@ -146,7 +275,9 @@ export default function GetStarted() {
           <Card className="max-w-md mx-auto">
             <CardHeader>
               <CardTitle>Get Started with OPENShelter</CardTitle>
-              <CardDescription>Fill out the form below to create your account</CardDescription>
+              <CardDescription>
+                Fill out the form below to create your account
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form className="space-y-4">
@@ -193,12 +324,17 @@ export default function GetStarted() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="document">Document Type</Label>
-                  <Select onValueChange={handleSelectChange} value={formData.document}>
+                  <Select
+                    onValueChange={handleSelectChange}
+                    value={formData.document}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select document type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="driving-license">Driving License</SelectItem>
+                      <SelectItem value="driving-license">
+                        Driving License
+                      </SelectItem>
                       <SelectItem value="id-proof">ID Proof</SelectItem>
                       <SelectItem value="passport">Passport</SelectItem>
                     </SelectContent>
@@ -208,22 +344,48 @@ export default function GetStarted() {
                   <Label htmlFor="document-upload">Upload Document</Label>
                   <div className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center">
                     <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground mb-1">Drag and drop your document here</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Drag and drop your document here
+                    </p>
                     <p className="text-xs text-muted-foreground">or</p>
-                    <Button variant="outline" size="sm" className="mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
                       Browse Files
                     </Button>
+                    {/* Hidden file input */}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
                   </div>
                 </div>
               </form>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button className="w-full flex items-center gap-2" variant="outline">
+              <Button
+                className="w-full flex items-center gap-2"
+                variant="outline"
+                onClick={connectWallet}
+              >
                 <Wallet className="h-4 w-4" />
-                Connect Wallet
+                {wallet.account
+                  ? `Connected: ${wallet.account.slice(0, 6)}...${wallet.account.slice(
+                      -4
+                    )}`
+                  : "Connect Wallet"}
               </Button>
               <Button className="w-full">Submit</Button>
-              <Button variant="link" className="w-full text-muted-foreground" onClick={() => setShowAdminLogin(true)}>
+              <Button
+                variant="link"
+                className="w-full text-muted-foreground"
+                onClick={() => setShowAdminLogin(true)}
+              >
                 <LockKeyhole className="h-4 w-4 mr-2" />
                 Admin Access
               </Button>
@@ -253,4 +415,3 @@ export default function GetStarted() {
     </div>
   )
 }
-

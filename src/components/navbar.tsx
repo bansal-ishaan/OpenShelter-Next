@@ -54,11 +54,11 @@ export default function Navbar() {
                   Loan Disbursement
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
+              {/* <DropdownMenuItem asChild>
                 <Link href="/transactions/previous-borrows" className="cursor-pointer">
                   Previous Borrows
                 </Link>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuItem asChild>
                 <Link href="/transactions/loan-repayment" className="cursor-pointer">
                   Loan Repayment

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
@@ -16,8 +15,8 @@ import Navbar from "@/components/navbar"
 
 export default function LoanDisbursement() {
     const { theme, setTheme } = useTheme()
-    const [loanAmount, setLoanAmount] = useState(500)
-    const [loanTerm, setLoanTerm] = useState("6")
+    const [loanAmount, setLoanAmount] = useState(0)
+    const [loanTerm, setLoanTerm] = useState("1")
     const [loanPurpose, setLoanPurpose] = useState("")
     const [activeTab, setActiveTab] = useState("apply")
     const [applicationSubmitted, setApplicationSubmitted] = useState(false)
@@ -31,9 +30,9 @@ export default function LoanDisbursement() {
         setApplicationSubmitted(true)
     }
 
-    // Calculate monthly payment (simple calculation for demo)
-    const interestRate = 0.035 // 3.5%
-    const monthlyPayment = Number.parseFloat(((loanAmount * (1 + interestRate)) / Number.parseInt(loanTerm)).toFixed(2))
+    // ETH values calculation
+    const ethAmount = loanAmount / 100
+    const monthlyPayment = Number.parseFloat(ethAmount.toFixed(4))
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -75,19 +74,19 @@ export default function LoanDisbursement() {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                             <p className="text-sm text-muted-foreground">Loan Amount</p>
-                            <p className="font-medium">${loanAmount} USDC</p>
+                            <p className="font-medium">{ethAmount.toFixed(2)} ETH</p>
                             </div>
                             <div>
                             <p className="text-sm text-muted-foreground">Term</p>
-                            <p className="font-medium">{loanTerm} months</p>
+                            <p className="font-medium">{loanTerm} month</p>
                             </div>
                             <div>
                             <p className="text-sm text-muted-foreground">Interest Rate</p>
-                            <p className="font-medium">3.5%</p>
+                            <p className="font-medium">0%</p>
                             </div>
                             <div>
-                            <p className="text-sm text-muted-foreground">Monthly Payment</p>
-                            <p className="font-medium">${monthlyPayment} USDC</p>
+                            <p className="text-sm text-muted-foreground">Total Repayment</p>
+                            <p className="font-medium">{ethAmount.toFixed(4)} ETH</p>
                             </div>
                         </div>
                         </div>
@@ -117,34 +116,29 @@ export default function LoanDisbursement() {
                             <div className="flex items-center gap-4 mt-6 mb-2">
                                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                                 <Slider
-                                defaultValue={[500]}
-                                max={2000}
-                                min={100}
-                                step={50}
+                                defaultValue={[0]}
+                                max={50}
+                                min={0}
+                                step={1}
                                 onValueChange={handleLoanAmountChange}
                                 className="flex-1"
                                 />
-                                <span className="font-medium w-16 text-right">${loanAmount}</span>
+                                <span className="font-medium w-16 text-right">{(loanAmount / 100).toFixed(2)} ETH</span>
                             </div>
                             <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>$100</span>
-                                <span>$2000</span>
+                                <span>0 ETH</span>
+                                <span>0.5 ETH</span>
                             </div>
                             </div>
 
                             <div className="space-y-2">
-                            <Label htmlFor="loan-term">Loan Term (months)</Label>
-                            <Select defaultValue="6" onValueChange={setLoanTerm}>
+                            <Label htmlFor="loan-term">Loan Term</Label>
+                            <Select defaultValue="1" onValueChange={setLoanTerm}>
                                 <SelectTrigger>
                                 <SelectValue placeholder="Select term" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                <SelectItem value="3">3 months</SelectItem>
-                                <SelectItem value="6">6 months</SelectItem>
-                                <SelectItem value="9">9 months</SelectItem>
-                                <SelectItem value="12">12 months</SelectItem>
-                                <SelectItem value="18">18 months</SelectItem>
-                                <SelectItem value="24">24 months</SelectItem>
+                                <SelectItem value="1">1 month</SelectItem>
                                 </SelectContent>
                             </Select>
                             </div>
@@ -164,16 +158,14 @@ export default function LoanDisbursement() {
                             <h3 className="font-medium mb-2">Loan Summary</h3>
                             <div className="grid grid-cols-2 gap-2 text-sm">
                                 <div className="text-muted-foreground">Amount:</div>
-                                <div className="font-medium">${loanAmount} USDC</div>
+                                <div className="font-medium">{(loanAmount / 100).toFixed(2)} ETH</div>
                                 <div className="text-muted-foreground">Term:</div>
-                                <div className="font-medium">{loanTerm} months</div>
+                                <div className="font-medium">{loanTerm} month</div>
                                 <div className="text-muted-foreground">Interest Rate:</div>
-                                <div className="font-medium">3.5%</div>
-                                <div className="text-muted-foreground">Monthly Payment:</div>
-                                <div className="font-medium">${monthlyPayment} USDC</div>
+                                <div className="font-medium">0%</div>
                                 <div className="text-muted-foreground">Total Repayment:</div>
                                 <div className="font-medium">
-                                ${(monthlyPayment * Number.parseInt(loanTerm)).toFixed(2)} USDC
+                                {(loanAmount / 100).toFixed(4)} ETH
                                 </div>
                             </div>
                             </div>
@@ -218,11 +210,11 @@ export default function LoanDisbursement() {
                             <div className="p-4">
                             <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                                 <div className="text-muted-foreground">Amount:</div>
-                                <div>${loanAmount} USDC</div>
+                                <div>{(loanAmount / 100).toFixed(2)} ETH</div>
                                 <div className="text-muted-foreground">Submitted:</div>
                                 <div>{new Date().toLocaleDateString()}</div>
                                 <div className="text-muted-foreground">Term:</div>
-                                <div>{loanTerm} months</div>
+                                <div>{loanTerm} month</div>
                             </div>
                             <div className="flex justify-between items-center">
                                 <Button variant="outline" size="sm" className="gap-1">
@@ -246,11 +238,11 @@ export default function LoanDisbursement() {
                             <div className="p-4">
                             <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                                 <div className="text-muted-foreground">Amount:</div>
-                                <div>$300 USDC</div>
+                                <div>0.3 ETH</div>
                                 <div className="text-muted-foreground">Approved:</div>
                                 <div>{new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</div>
                                 <div className="text-muted-foreground">Term:</div>
-                                <div>3 months</div>
+                                <div>1 month</div>
                             </div>
                             <div className="flex justify-between items-center">
                                 <Button variant="outline" size="sm" className="gap-1">
@@ -275,11 +267,11 @@ export default function LoanDisbursement() {
                             <div className="p-4">
                             <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                                 <div className="text-muted-foreground">Amount:</div>
-                                <div>$1,500 USDC</div>
+                                <div>0.5 ETH</div>
                                 <div className="text-muted-foreground">Submitted:</div>
                                 <div>{new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toLocaleDateString()}</div>
                                 <div className="text-muted-foreground">Term:</div>
-                                <div>18 months</div>
+                                <div>1 month</div>
                             </div>
                             <div className="flex justify-between items-center">
                                 <Button variant="outline" size="sm" className="gap-1">
@@ -331,4 +323,3 @@ export default function LoanDisbursement() {
         </div>
     )
 }
-

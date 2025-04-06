@@ -344,25 +344,30 @@ export default function GetStarted() {
                   <Label htmlFor="document-upload">Upload Document</Label>
                   <div className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center">
                     <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Drag and drop your document here
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-1">Drag and drop your document here</p>
                     <p className="text-xs text-muted-foreground">or</p>
+                    {/* Hidden file input */}
+                    <input
+                      type="file"
+                      id="document-upload"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          console.log("Selected file:", file);
+                          // You can also update state here to preview or store the file
+                        }
+                      }}
+                    />
+                    {/* Browse button triggers file input click */}
                     <Button
                       variant="outline"
                       size="sm"
                       className="mt-2"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => document.getElementById("document-upload")?.click()}
                     >
                       Browse Files
                     </Button>
-                    {/* Hidden file input */}
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
                   </div>
                 </div>
               </form>
